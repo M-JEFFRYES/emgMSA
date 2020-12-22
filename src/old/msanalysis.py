@@ -68,12 +68,32 @@ def find_N90(features_tvaf):
 
 ####################################
 
+def bland_altman_plot(data1, data2):
+    #data1     = np.asarray(data1)
+    #data2     = np.asarray(data2)
+    mean      = np.mean([data1, data2], axis=0)
+    diff      = data1 - data2                   # Difference between data1 and data2
+    md        = np.mean(diff)                   # Mean of the difference
+    sd        = np.std(diff, axis=0)            # Standard deviation of the difference
+    plt.figure()
+    plt.title("Signal vs Approximation Bland-Altman Graph")
+    plt.scatter(mean, diff)
+    plt.axhline(md,           color='gray', linestyle='--')
+    plt.axhline(md + 1.96*sd, color='gray', linestyle='--')
+    plt.axhline(md - 1.96*sd, color='gray', linestyle='--')
+    plt.xlabel("Signal")
+    plt.ylabel("NMF Approximation")
+    plt.show()
+    return
+
+####################################
 
 class MuscleSynergyAnalysis:
 
-    def __init__(self, MSAdata, plot_n90=False, plot_WH=False, plot_relat=False):
+    def __init__(self, MSAdata, channels_used, plot_n90=False, plot_WH=False, plot_MSA_info=False):
 
         self.inputdata = MSAdata
+        self.chns = channels_used
 
         # Calculate the tVAF1
         self.single_synergy_analysis()
@@ -89,8 +109,10 @@ class MuscleSynergyAnalysis:
             #Plot the weighting and activation patterns for N90 - ish
             self.plot_weighings_activations()
 
-        if plot_relat==True:
+        if plot_MSA_info==True:
             self.compare_WH_input()
+            self.plot_input_approx()
+            self.plot_synergy_contribution()
 
     def single_synergy_analysis(self):
         """
@@ -125,6 +147,7 @@ class MuscleSynergyAnalysis:
     
         plt.figure()
         plt.plot(self.features_tVAF)
+        plt.axhline(90,           color='gray', linestyle='--')
         plt.title("n_components comparison")
         plt.xlabel("Number of features")
         plt.ylabel("tVAF (%)")
@@ -150,7 +173,7 @@ class MuscleSynergyAnalysis:
         w = []
         for i in range(len(W[:,0])):
             for j in range(len(W[0,:])):
-                w.append([chns[i], syn_labs[j], W[i,j]])
+                w.append([self.chns[i], syn_labs[j], W[i,j]])
             
         dfW = pd.DataFrame(data=w, columns=cols)
 
@@ -166,16 +189,18 @@ class MuscleSynergyAnalysis:
 
         plt.title("Synergy Acivation Patterns")
         axH = sns.lineplot(data=dfH)
+        plt.xlabel("Sample")
+        plt.ylabel("Pattern Scaling Value")
         plt.show()
         return
 
     def compare_WH_input(self):
 
-        W, H, M = run_NMF(self.inputdata, int(np.round(self.N90,0)))
+        self._W, self._H, self._M = run_NMF(self.inputdata, int(np.round(self.N90,0)))
 
         cols = ["Muscle", "Input", "Model"]
 
-        bl_at = [self.inputdata.flatten(), M.flatten()]
+        bl_at = [self.inputdata.flatten(), self._M.flatten()]
         bl_at = np.array(bl_at)
 
         plt.figure()
@@ -185,12 +210,43 @@ class MuscleSynergyAnalysis:
         plt.ylabel("Approximation")
         plt.show()
         return
+    
+    def plot_input_approx(self):
+        for i in range(len(self._M)):
+
+            plt.figure()
+            plt.title(self.chns[i])
+            signal = plt.plot(self.inputdata[i], 'r', label="Input Signal")
+            approx = plt.plot(self._M[i], 'g', label="NMF Approximation")
+            plt.xlabel("Sample")
+            plt.ylabel("Signal Amplitude")
+            plt.legend()
+            plt.show()
+        
+        bland_altman_plot(self.inputdata.flatten(), self._M.flatten())
+
+        return
+    
+    def plot_synergy_contribution(self):
+        for i in range(len(self._W)):  
+            plt.figure()
+            plt.title(self.chns[i])
+            plt.plot(self.inputdata[i], 'g')
+            plt.plot(self._M[i], 'r')
+            for j in range(len(self._W[0])):
+                plt.plot(self._W[i,j]*self._H[j],'--')
+            plt.xlabel("Sample")
+            plt.ylabel("Signal Amplitude")
+            plt.show()
+        return
 
 
+#chns = ['LRF','LMH','LTA','LMG','RRF','RMH','RTA','RMG']
+#chns_l = ['LRF','LMH','LTA','LMG']
+#chns_r = ['RRF','RMH','RTA','RMG']
 
+#x = MuscleSynergyAnalysis(abs(emg_b), chns, plot_n90=True)
 
-
-
-
+#x = MuscleSynergyAnalysis(abs(emg_b), chns, plot_MSA_info=True, plot_WH=True)
 
 

@@ -13,6 +13,7 @@ import json
 ############ functions
 
 def batch_extract_c3d_data(paths, outputdir):
+    cant_extract = []
     a=0
     for i, path in enumerate(paths):
         try:
@@ -23,20 +24,23 @@ def batch_extract_c3d_data(paths, outputdir):
                 
             except:
                 a+=1
+                cant_extract.append(path)
                 print("Unable to save EMG data from {}".format(path))
             
             try:
                 data.export_GPS_data(outputdir)
             except:
                 a+=1
+                cant_extract.append(path)
                 print("Unable to save GPS data from {}".format(path))
         except:
             a+=1
+            cant_extract.append(path)
             print("Cant open {}". format(path))
         
         print("file {} of {} checked".format(i+1, len(paths)))
     print("Couldn't check {} files".format(a))
-    return
+    return cant_extract
 
 def slice_MSA_data(msa_dict, chns):
 
@@ -61,6 +65,10 @@ def collect_MSA_data(msa_dict):
 
 def open_GPS_MSA(gps_path, msa_path):
 
+    chns = ['LRF','LMH','LTA','LMG','RRF','RMH','RTA','RMG']
+    chns_l = ['LRF','LMH','LTA','LMG']
+    chns_r = ['RRF','RMH','RTA','RMG']
+
     name = msa_path.split("_")[0]
     
     GPS = GPSData(gps_path, "C:\\Development_projects\\EXAMPLE_FILES\\GPS\\reference")
@@ -74,11 +82,11 @@ def open_GPS_MSA(gps_path, msa_path):
 
     emg_b, emg_l, emg_r = collect_MSA_data(msa_dict)
 
-    msa_b =  MuscleSynergyAnalysis(abs(emg_b))#, plot_n90=True, plot_WH=True, plot_relat=True)
+    msa_b =  MuscleSynergyAnalysis(abs(emg_b), chns)#, plot_n90=True, plot_WH=True, plot_relat=True)
     print("{} bilateral calculated".format(name))
-    msa_l =  MuscleSynergyAnalysis(abs(emg_l))#, plot_n90=True, plot_WH=True, plot_relat=True)
+    msa_l =  MuscleSynergyAnalysis(abs(emg_l), chns_l)#, plot_n90=True, plot_WH=True, plot_relat=True)
     print("{} left calculated".format(name))
-    msa_r =  MuscleSynergyAnalysis(abs(emg_r))#, plot_n90=True, plot_WH=True, plot_relat=True)
+    msa_r =  MuscleSynergyAnalysis(abs(emg_r), chns_r)#, plot_n90=True, plot_WH=True, plot_relat=True)
     print("{} right calculated".format(name))
     data = [name, gps, gps_l, gps_r, msa_b.N90, msa_l.N90, msa_r.N90]
     return data
@@ -131,6 +139,10 @@ def plotting_results(results):
     ax = sns.scatterplot(x="N90 L", y="N90 R", data=df)#df[(df['GPS Left']<30) & (df['N90 L']>1.0001) & (df['GPS Left']>df['GPS Right']+crit)])
     plt.show()
 
+    plt.title("Comparison of N90 Sides")
+    ax = sns.scatterplot(x="N90 L", y="N90 R", data=df)#df[(df['GPS Left']<30) & (df['N90 L']>1.0001) & (df['GPS Left']>df['GPS Right']+crit)])
+    plt.show()
+
     plt.title("Comparison of GPS Sides")
     ax = sns.scatterplot(x="GPS Left", y="GPS Right", data=df[(df['GPS Left']<30) & (df['GPS Right']<30)])
     plt.show()
@@ -149,7 +161,7 @@ for pth in os.listdir(c3ddir):
     paths.append("{}\\{}".format(c3ddir, pth))
 
 # Batch extract
-batch_extract_c3d_data(paths, extractdir)
+cant_extract = batch_extract_c3d_data(paths, extractdir)
 
 # collect gps and msa paths
 gps_paths = []
@@ -167,6 +179,16 @@ chns_l = ['LRF','LMH','LTA','LMG']
 chns_r = ['RRF','RMH','RTA','RMG']
 
 
+with open(msa_paths[0], 'rb') as f:
+    x = json.load(f)
+
+xb, xl, xr= collect_MSA_data(x)
+
+y = MuscleSynergyAnalysis(abs(xb), chns, plot_MSA_info=True)
+
+
+
+
 #a = open_GPS_MSA(gps_paths[1], msa_paths[1])
 # batch GPS and MSA
 results = batch_MSA_GPS(msa_paths, gps_paths)
@@ -174,3 +196,4 @@ results = batch_MSA_GPS(msa_paths, gps_paths)
 # Plot results
 plotting_results(results)
 ######################################
+
