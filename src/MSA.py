@@ -73,7 +73,6 @@ class ProccessChannel:
         return normalised
 
 
-
 class ProcessInputData:
     """This class loads raw EMG data, processes the channels and prepares data ready for muscle synergy analysis."""
 
@@ -106,31 +105,6 @@ class ProcessInputData:
         return
 
 
-##################################
-emgpath = "../tests/exampledata/t1_EMG_Left.json"
-with open(emgpath, 'rb') as f:
-    rawEMG = json.load(f)
-
-goodCHN = ['RMG',"RTA", "RMH","RRF", 'LMG',"LTA", "LMH","LRF"]
-
-EMG ={}
-for c in goodCHN:
-    EMG[c] = rawEMG[c]
-
-# test chn process
-keys = list(EMG.keys())
-
-CHN = np.array(EMG[keys[0]])
-
-q = ProccessChannel()
-em = q.go(CHN)
-
-# test process input
-tr = ProcessInputData(EMG).modelData
-tr.shape
-
-
-###########################################
 class RunModel:
     def __init__(self, processedData, noSynergies):
         self.noSynergies = noSynergies
@@ -172,23 +146,13 @@ class RunModel:
 
         self.walkDMC = 100+10*((referenceTVAF1avg-self.TVAF)/referenceTVAF1stdev)
 
-################################################
-emgpath = "../tests/exampledata/t1_EMG_Left.json"
-with open(emgpath, 'rb') as f:
-    rawEMG = json.load(f)
-
-tr = ProcessInputData(emgpath).modelData
-tr.shape
-
-
-nmfModel = RunModel(tr, 1)
-
-####################################
-
 
 class MSAtrial:
-    def __init__(self, processedEMG, refTVAFavg=None, refTVAFstdev=None):
-        self.data = processedEMG
+    def __init__(self, rawEMG, refTVAFavg=None, refTVAFstdev=None):
+
+        self.processedEMG = ProcessInputData(rawEMG).modelData
+
+        self.data = self.processedEMG
         self.nCrit = 90
 
         self.TVAFS =[]
@@ -202,7 +166,7 @@ class MSAtrial:
         return
         
     def singleSnergy(self, refTVAFavg, refTVAFstdev):
-        msyn1 = RunModel(tr, 1)
+        msyn1 = RunModel(self.processedEMG, 1)
         if (refTVAFavg!=None) and (refTVAFstdev!=None):  
             self.walkDMC = msyn1.calculateWALK_DMC(refTVAFavg, refTVAFstdev)
         else:
@@ -214,12 +178,12 @@ class MSAtrial:
     def multipleSynergies(self):
 
         for i in range(2,4):
-            msyns = RunModel(tr, i)
+            msyns = RunModel(self.processedEMG, i)
             self.TVAFS.append(msyns.TVAF)
         
         i = i+1
         while(np.mean(self.TVAFS[-3:])<99.5):
-            msyns = RunModel(tr, i)
+            msyns = RunModel(self.processedEMG, i)
             self.TVAFS.append(msyns.TVAF)
             i =i+1
             if i>49:
@@ -259,33 +223,57 @@ class MSAtrial:
         plt.show()
         return
 
+# ##################################
+# emgpath = "../tests/exampledata/t1_EMG_Left.json"
+# with open(emgpath, 'rb') as f:
+#     rawEMG = json.load(f)
 
-################################################
-emgpath = "../tests/exampledata/t1_EMG_Left.json"
-with open(emgpath, 'rb') as f:
-    rawEMG = json.load(f)
+# goodCHN = ['RMG',"RTA", "RMH","RRF", 'LMG',"LTA", "LMH","LRF"]
 
-processedEMG = ProcessInputData(rawEMG).modelData
+# EMG ={}
+# for c in goodCHN:
+#     EMG[c] = rawEMG[c]
 
-trial = MSAtrial(processedEMG)
-trial = MSAtrial(tr)
-trial.N90
-trial.plotN90()
+# # test chn process
+# keys = list(EMG.keys())
 
-nmfModel = RunModel(trial, 1)
+# CHN = np.array(EMG[keys[0]])
 
-t = trial.TVAFS
+# q = ProccessChannel()
+# em = q.go(CHN)
 
-for i, value in enumerate(t):
-    if value>97:
-       
-
-        print(i)
-        print(ind)
-
-
-        break
+# # test process input
+# tr = ProcessInputData(EMG).modelData
+# tr.shape
 
 
-####################################
+# ###########################################
+# ################################################
+# emgpath = "../tests/exampledata/t1_EMG_Left.json"
+# with open(emgpath, 'rb') as f:
+#     rawEMG = json.load(f)
+
+# tr = ProcessInputData(rawEMG).modelData
+# tr.shape
+
+
+# nmfModel = RunModel(tr, 1)
+
+# ####################################
+
+# ################################################
+# emgpath = "../tests/exampledata/t1_EMG_Left.json"
+# with open(emgpath, 'rb') as f:
+#     rawEMG = json.load(f)
+
+# processedEMG = ProcessInputData(rawEMG).modelData
+
+# trial = MSAtrial(rawEMG)
+# trial = MSAtrial(tr)
+# trial.N90
+# trial.plotN90()
+
+# nmfModel = RunModel(processedEMG, 1)
+
+# ####################################
 
