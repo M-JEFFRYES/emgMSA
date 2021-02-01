@@ -27,24 +27,24 @@ class ProccessChannel:
         processedChannel = normalised
         
         
-        plt.figure(figsize=(10,10))
-        plt.subplot(6,1,1)
-        plt.plot(channel)
+        # plt.figure(figsize=(10,10))
+        # plt.subplot(6,1,1)
+        # plt.plot(channel)
 
-        plt.subplot(6,1,2)
-        plt.plot(hpFiltered)
+        # plt.subplot(6,1,2)
+        # plt.plot(hpFiltered)
 
-        plt.subplot(6,1,3)
-        plt.plot(rectified)
+        # plt.subplot(6,1,3)
+        # plt.plot(rectified)
 
-        plt.subplot(6,1,4)
-        plt.plot(lpFiltered)
+        # plt.subplot(6,1,4)
+        # plt.plot(lpFiltered)
 
-        plt.subplot(6,1,5)
-        plt.plot(downsampled)
+        # plt.subplot(6,1,5)
+        # plt.plot(downsampled)
 
-        plt.subplot(6,1,6)
-        plt.plot(normalised)
+        # plt.subplot(6,1,6)
+        # plt.plot(normalised)
 
         return processedChannel
 
