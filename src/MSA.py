@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 class ProccessChannel:
 
-    def __init__(self,  f_emg = 1000, fc_high = 40, fc_low = 8):
+    def __init__(self, dsFrequency=100, f_emg = 1000, fc_high = 40, fc_low = 8):
         self.f_emg = f_emg
         self.fc_high = fc_high
         fCritHP = self.fc_high/(0.5*self.f_emg)
@@ -16,6 +16,7 @@ class ProccessChannel:
         self.fc_low = fc_low
         fCritLP = fc_low/(0.5*self.f_emg)
         self.aLP, self.bLP = signal.butter(4, fCritLP, 'low', analog=True)
+        self.dsFrequency = dsFrequency
 
     def go(self, emgChannel):
         channel = np.array(emgChannel)
@@ -61,7 +62,7 @@ class ProccessChannel:
         return lpFiltered
 
     def downsample(self, lpFiltered):
-        dstotal = int((len(lpFiltered)/self.f_emg)*100)
+        dstotal = int((len(lpFiltered)/self.f_emg)*self.dsFrequency)
         downsampled = signal.resample(lpFiltered, dstotal)
         for i, val in enumerate(downsampled):
             if val<0:
@@ -76,7 +77,9 @@ class ProccessChannel:
 class ProcessInputData:
     """This class loads raw EMG data, processes the channels and prepares data ready for muscle synergy analysis."""
 
-    def __init__(self, rawEMG, emgFrequency=1000): 
+    def __init__(self, rawEMG, emgFrequency=1000, dsFrequency=100): 
+        self.dsFrequency=dsFrequency
+
         self.emgFrequency=emgFrequency
 
         self.rawData = rawEMG
@@ -88,7 +91,7 @@ class ProcessInputData:
         return
     
     def processEMG(self):
-        emgProcessor = ProccessChannel()
+        emgProcessor = ProccessChannel(dsFrequency=self.dsFrequency)
         self.processedData ={}
         for key, value in self.rawData.items():
             self.processedData[key] = emgProcessor.go(value)
@@ -148,9 +151,9 @@ class RunModel:
 
 
 class MSAtrial:
-    def __init__(self, rawEMG, refTVAFavg=None, refTVAFstdev=None):
+    def __init__(self, rawEMG, dsFrequency=100, refTVAFavg=None, refTVAFstdev=None):
 
-        self.processedEMG = ProcessInputData(rawEMG).modelData
+        self.processedEMG = ProcessInputData(rawEMG, dsFrequency=dsFrequency).modelData
 
         self.data = self.processedEMG
         self.nCrit = 90
