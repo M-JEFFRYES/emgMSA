@@ -2,7 +2,6 @@ import json
 import numpy as np
 import scipy.signal as signal
 
-
 from sklearn.decomposition import NMF
 import matplotlib.pyplot as plt
 
@@ -73,34 +72,30 @@ class ProccessChannel:
         normalised = downsampled/max(downsampled)
         return normalised
 
-
 class ProcessInputData:
     """This class loads raw EMG data, processes the channels and prepares data ready for muscle synergy analysis."""
 
-    def __init__(self, rawEMG, emgFrequency=1000, dsFrequency=100): 
+    def __init__(self, emgData, emgFrequency=1000, dsFrequency=100): 
         self.dsFrequency=dsFrequency
 
         self.emgFrequency=emgFrequency
-
-        self.rawData = rawEMG
-
-        self.processEMG()
+        self.processEMG(emgData)
 
         # need to add function to select channels
         self.nmfReady()
         return
     
-    def processEMG(self):
+    def processEMG(self, emgData):
         emgProcessor = ProccessChannel(dsFrequency=self.dsFrequency)
-        self.processedData ={}
-        for key, value in self.rawData.items():
-            self.processedData[key] = emgProcessor.go(value)
+        self.processedEMGData ={}
+        for key, value in emgData.items():
+            self.processedEMGData[key] = emgProcessor.go(value)
         return
 
     def nmfReady(self):
         labels =[]
         data = []
-        for key, value in self.processedData.items():
+        for key, value in self.processedEMGData.items():
             labels.append(key)
             data.append(value)
         self.modelLabels = labels
@@ -151,9 +146,9 @@ class RunModel:
 
 
 class MSAtrial:
-    def __init__(self, rawEMG, dsFrequency=100, refTVAFavg=None, refTVAFstdev=None):
+    def __init__(self, emgData, dsFrequency=100, refTVAFavg=None, refTVAFstdev=None):
 
-        self.processedEMG = ProcessInputData(rawEMG, dsFrequency=dsFrequency).modelData
+        self.processedEMG = ProcessInputData(emgData, dsFrequency=dsFrequency).modelData
 
         self.data = self.processedEMG
         self.nCrit = 90
@@ -279,4 +274,14 @@ class MSAtrial:
 # nmfModel = RunModel(processedEMG, 1)
 
 # ####################################
+
+# from ezc3d import c3d
+# from gaittrial import TrialData
+
+# pth = "F:/msc_data/C3D_FILES_REF/SUB352_1_2.c3d"
+# trialc3d = c3d(pth)
+# tr = TrialData(trialc3d)
+
+# msa = MSAtrial(tr.emgLeft)
+
 
