@@ -8,7 +8,7 @@ setup(
     author='Michael Jeffryes',
     author_email='mike.jeffryes@hotmail.com',
     url='',
-    version='1.0.4',
+    version='1.0.5',
     description='Analyses emg muscle synergies ',
     #packages=['emgmsa'],
     py_modules=["MSA",],
