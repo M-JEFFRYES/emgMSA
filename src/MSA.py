@@ -190,7 +190,7 @@ class MSAtrial(ProcessInputData):
             self.TVAFS.append(msyns.TVAF)
         
         i = i+1
-        while(np.mean(self.TVAFS[-3:])<99.5):
+        while(np.mean(self.TVAFS[-3:])<99.5) or (i<10):
             msyns = RunModel(self.modelData, i)
             self.TVAFS.append(msyns.TVAF)
             i =i+1
@@ -262,9 +262,6 @@ class MSAtrial(ProcessInputData):
             ax.set_xticklabels(xlabs)
             plt.show()
         return
-
-
-
 
 
 
